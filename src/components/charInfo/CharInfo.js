@@ -1,16 +1,93 @@
+import { Component } from 'react'
 import './CharInfo.sass'
-import loki from '../../resources/img/loki.png'
 
-export default function CharInfo() {
-    return(
-        <section className='char-info'>
-            <img src={loki} alt="X-Men: Days of Future Past" className="char-info__img" />
-            <div className="char-info__text-block">
-                <h3 className="char-info__name">LOKI</h3>
-                <p className="char-info__descr">
-                In Norse mythology, Loki is a god or jötunn (or both). Loki is the son of Fárbauti and Laufey, and the brother of Helblindi and Býleistr. By the jötunn Angrboða, Loki is the father of Hel, the wolf Fenrir, and the world serpent Jörmungandr. By Sigyn, Loki is the father of Nari and/or Narfi and with the stallion Svaðilfari as the father, Loki gave birth—in the form of a mare—to the eight-legged horse Sleipnir. In addition, Loki is   referred to as the father of Váli in the Prose Edda.
-                </p>
+
+import Spinner from "../UI/Spinner"
+import ErrorMessage from '../UI/ErrorMessage'
+import MarvelServices from '../../services/MarvelServices';
+
+export default class CharInfo extends Component {
+
+    state = {
+        char: null,
+        loading: false,
+        error: false
+    }
+
+    MarvelService = new MarvelServices();
+
+    onCharListLoaded = (char) => {
+        this.setState({
+            char,
+            loading: false
+        })
+    }
+
+    componentDidUpdate(prevProps){
+        if (this.props.charId !== prevProps.charId) {
+            this.updateChar();
+        }
+    }
+
+    onCharLoading = () => {
+        this.setState({
+            loading: true
+        })
+    }
+
+    onError = () => {
+        this.setState({
+            error: true,
+            loading: false
+        })
+    }
+
+    updateChar = () => {
+        const {charId} = this.props;
+        if (!charId) {
+            return;
+        }
+
+        this.onCharLoading();
+
+        this.marvelService
+            .getCharacter(charId)
+            .then(this.onCharLoaded)
+            .catch(this.onError);
+    }
+
+    render() {
+
+        const {char, loading, error} = this.state;
+
+        const errorMessage = error ? <ErrorMessage/> : null;
+        const spinner = loading ? <Spinner/> : null;
+        const content = !(loading || error || !char) ? <View char={char}/> : null;
+
+        return(
+            <div className='char-info'>
+                {errorMessage}
+                {spinner}
+                {content}
             </div>
-        </section>
+        )
+    }
+}
+
+const View = ({char}) => {
+    const {name, description, thumbnail} = char;
+
+    let imgStyle = {'objectFit' : 'cover'};
+    if (thumbnail === 'http://i.annihil.us/u/prod/marvel/i/mg/b/40/image_not_available.jpg') {
+        imgStyle = {'objectFit' : 'contain'};
+    }
+    return (
+        <>
+            <img src={thumbnail} alt={name} className="char-info__img" style={imgStyle}/>
+            <div className="char-info__text-block">
+                <h3 className="char-info__name">{name}</h3>
+                <p className="char-info__descr">{description}</p>
+            </div>
+        </> 
     )
 }

@@ -4,17 +4,18 @@ import Header from "../appHeader/AppHeader"
 import RandomChar from "../randomChar/RandomChar"
 import CharList from "../charList/CharList"
 import ComicsList from "../comicsList/ComicsList"
-import Skeleton from "../skeleton/Skeleton"
 import CharSidePanel from "../charSidePanel/CharSidePanel"
 import AppBanner from "../appBanner/AppBanner"
 import ComicsInfo from "../comicsInfo/ComicsInfo"
 import CharInfo from "../charInfo/CharInfo"
 import Modal from "../modal/Modal"
+import ErrorBoundary from "../errorBoundary/ErrorBoundary"
 
 class App extends Component {
   constructor(props) {
     super(props);
     this.state = {
+      selectedChar: null,
       page: 'char'
     }
   }
@@ -23,31 +24,23 @@ class App extends Component {
     this.setState(({page}))
   }
 
+  onCharSelected =(id) => {
+    this.setState({
+      selectedChar: id
+    })
+  }
+
 
   render() {
     const appClass = this.state.page === 'char' ? ('bg-decoration') : null
     const updatePage = (page) => {
       switch(page) {
-        case 'char':
-          return (
-            <>
-              <RandomChar/>
-              <section className="main">
-                <CharList/>
-                <div>
-                  <CharSidePanel/>
-                  {/* <Skeleton/> */}
-                  <Modal modalType={'validationError'}/>
-                </div>
-              </section>
-            </>
-          );
         case 'charInfo':
           return(
             <>
               <AppBanner/>
               <section className="comics">
-                <CharInfo/>
+                <CharInfo charId={this.state.selectedChar}/>
               </section>
             </>
           )
@@ -70,6 +63,21 @@ class App extends Component {
             </>
 
           )
+          default:
+            return (
+              <>
+                <RandomChar/>
+                <section className="main">
+                  <CharList onCharSelected={this.onCharSelected}/>
+                  <div>
+                    <ErrorBoundary>
+                      <CharSidePanel charId={this.state.selectedChar}/>
+                    </ErrorBoundary>
+                    <Modal modalType={'validationError'}/>
+                  </div>
+                </section>
+              </>
+            );
       }
     }
 

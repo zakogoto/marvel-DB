@@ -14,6 +14,8 @@
         margin: 0 auto
     &_main
         margin-top: 45px
+        &:disabled
+            filter: grayscale(.5)
     &::before, &::after
         content: ''
         position: absolute
@@ -34,6 +36,8 @@
         right: -6px 
     &_red
         background: $main-color
+        &:disabled
+            filter: grayscale(.5)
     &_gray
         background: #5C5C5C
     &_dark-bg
@@ -41,5 +45,7 @@
             background: $bg-color
     &:hover
         transform: translateY(-5px)
+    &:disabled
+        filter: grayscale(.5)
         
         

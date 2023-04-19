@@ -1,43 +1,129 @@
-import loki from '../../resources/img/loki.png';
+import { Component } from 'react';
+import PropTypes from 'prop-types'; 
+
+import Spinner from "../UI/Spinner"
+import ErrorMessage from '../UI/ErrorMessage'
+import MarvelServices from '../../services/MarvelServices';
+import Skeleton from '../skeleton/Skeleton';
 
 import './CharSidePanel.sass'
 
-export default function CharSidePanel() {
-    const comicsData = [
-        {name: 'All-Winners Squad: Band of Heroes (2011) #3'},
-        {name: 'Amazing Spider-Man (1999) #504'},
-        {name: 'Alpha Flight (1983) #50'},
-        {name: 'All-Winners Squad: Band of Heroes (2011) #3'},
-        {name: 'All-Winners Squad: Band of Heroes (2011) #3'},
-        {name: 'Asgardians Of The Galaxy Vol. 2: War Of The Realms (Trade Paperback)'},
-        {name: 'All-Winners Squad: Band of Heroes (2011) #3'}
-    ]
-    const comicsList = comicsData.map(({name})=> {
+export default class CharSidePanel extends Component {
+
+    state = {
+        char: null,
+        loading: false,
+        error: false
+    }
+
+    MarvelService = new MarvelServices();
+
+    componentDidMount() {
+        this.updateChar();
+    }
+
+    componentDidUpdate(prevProps){
+        if (this.props.charId !== prevProps.charId) {
+            this.updateChar();
+        }
+    }
+
+    updateChar = () => {
+        const {charId} = this.props;
+        if (!charId) {
+            return;
+        }
+
+        this.onCharLoading();
+
+        this.MarvelService
+            .getCharacter(charId)
+            .then(this.onCharLoaded)
+            .catch(this.onError);
+    }
+
+    onCharLoaded = (char) => {
+        this.setState({
+            char, 
+            loading: false
+        })
+    }
+
+    onCharLoading = () => {
+        this.setState({
+            loading: true
+        })
+    }
+
+    onError = () => {
+        this.setState({
+            loading: false,
+            error: true
+        })
+    }
+
+
+    render(){
+        const {char, loading, error} = this.state;
+
+        const skeleton = char || loading || error ? null : <Skeleton/>;
+        const errorMessage = error ? <ErrorMessage/> : null;
+        const spinner = loading ? <Spinner/> : null;
+        const content = !(loading || error || !char) ? <View char={char}/> : null;
         return(
-            <li className="char-side-panel__comics-item">{name}</li>
+            <section className='char-side-panel'>
+                {skeleton}
+                {errorMessage}
+                {spinner}
+                {content}
+            </section>
         )
-    })
-    return(
-        <section className='char-side-panel'>
+    }
+}
+
+const View = ({char}) => {
+
+    const {name, description, thumbnail, homepage, wiki, comics} = char;
+
+    let imgStyle = {'objectFit' : 'cover'};
+
+    if (
+        thumbnail === 'http://i.annihil.us/u/prod/marvel/i/mg/b/40/image_not_available.jpg' 
+        || thumbnail === 'http://i.annihil.us/u/prod/marvel/i/mg/f/60/4c002e0305708.gif'
+        ) {
+        imgStyle = {'objectFit' : 'contain'};
+    }
+
+    return (
+        <>
             <div className="char-side-panel__wrap">
-                <div  className="char-side-panel__img">
-                    <img src={loki} alt="loki" />
-                </div>
-                <div className="char-side-panel__info">
-                    <div className="random-char__name">Loki</div>
-                    <div className="char-side-panel__btns">
-                        <button className='btn btn_red'>HOMEPAGE</button>
-                        <button className='btn btn_gray'>WIKI</button>
-                    </div>
+            <div  className="char-side-panel__img">
+                <img src={thumbnail} alt={name} style={imgStyle} />
+            </div>
+            <div className="char-side-panel__info">
+                <div className="random-char__name">{name}</div>
+                <div className="char-side-panel__btns">
+                    <a href={homepage} rel="noreferrer" target='_blank' className='btn btn_red'>HOMEPAGE</a>
+                    <a href={wiki} rel="noreferrer" target='_blank' className='btn btn_gray'>WIKI</a>
                 </div>
             </div>
-            <p className="random-char__descr char-side-panel__descr">
-            In Norse mythology, Loki is a god or jötunn (or both). Loki is the son of Fárbauti and Laufey, and the brother of Helblindi and Býleistr. By the jötunn Angrboða, Loki is the father of Hel, the wolf Fenrir, and the world serpent Jörmungandr. By Sigyn, Loki is the father of Nari and/or Narfi and with the stallion Svaðilfari as the father, Loki gave birth—in the form of a mare—to the eight-legged horse Sleipnir. In addition, Loki is referred to as the father of Váli in the Prose Edda.
-            </p>
+            </div>
+            <p className="random-char__descr char-side-panel__descr">{description}</p>
             <div className="char-side-panel__comics-title">Comics:</div>
             <ul className="char-side-panel__comics-list">
-                {comicsList}
-            </ul>
-        </section>
+                {comics.length > 0 ? null : 'There is no comics with this character'}
+                {comics.map((item, i) =>{ 
+                    // eslint-disable-next-line
+                    if (i > 9) return;
+                    return (
+                        <li key={i} className="char-side-panel__comics-item">{item.name}</li>
+                    )
+                })}
+        </ul>
+        </>
     )
+}
+
+CharSidePanel.propTypes = {
+    charId: PropTypes.number,
 }
